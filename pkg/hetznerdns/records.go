@@ -23,19 +23,21 @@ const (
 )
 
 func (h *dNSHetzner) GetRecords(ctx context.Context, opts GetRecordsOpts) (Records, error) {
-	requestUrl, err := url.Parse(hetznerDNSBaseURL + "records")
-	if err != nil {
-		panic(err)
-	}
 
+	queryParams := url.Values{}
 	if opts.Page != 0 {
-		requestUrl.Query().Add(recordsQueryParamPage, strconv.Itoa(opts.Page))
+		queryParams.Add(recordsQueryParamPage, strconv.Itoa(opts.Page))
 	}
 	if opts.PerPage != 0 {
-		requestUrl.Query().Add(recordsQueryParamPerPage, strconv.Itoa(opts.PerPage))
+		queryParams.Add(recordsQueryParamPerPage, strconv.Itoa(opts.PerPage))
 	}
 	if opts.ZoneID != "" {
-		requestUrl.Query().Add(recordsQueryParamZoneID, string(opts.ZoneID))
+		queryParams.Add(recordsQueryParamZoneID, string(opts.ZoneID))
+	}
+
+	requestUrl, err := url.Parse(hetznerDNSBaseURL + "records?" + queryParams.Encode())
+	if err != nil {
+		panic(err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl.String(), nil)
@@ -67,7 +69,7 @@ func (h *dNSHetzner) GetRecords(ctx context.Context, opts GetRecordsOpts) (Recor
 	var recordsResponse recordsResponse
 	err = json.NewDecoder(response.Body).Decode(&recordsResponse)
 	if err != nil {
-		return Records{}, err
+		return Records{}, fmt.Errorf("%w: %s", ErrUnknown, err.Error())
 	}
 
 	return recordsResponse.Records, nil

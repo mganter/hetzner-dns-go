@@ -8,13 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"io"
 	"net/http"
-	"testing"
 )
-
-func TestDNSClient(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Books Suite")
-}
 
 var _ = Describe("GetRecords", func() {
 	Context("With no optional parameter", func() {
@@ -60,16 +54,39 @@ var _ = Describe("GetRecords", func() {
 		})
 	})
 
+	Context("With optional parameters", func() {
+		var request *http.Request
+		BeforeEach(func() {
+			client := NewTestClient(func(req *http.Request) *http.Response {
+				request = req
+
+				return &http.Response{
+					Status:     "OK",
+					StatusCode: http.StatusOK,
+					Body: io.NopCloser(bytes.NewReader([]byte(`
+{
+  "records": [
+    {
+      "type": "A",
+      "zone_id": "my-id",
+      "name": "string"
+    }
+  ]
+}`))),
+				}
+			})
+			dnsClient := hetznerdns.NewDNSClientWithHttpClient("my-token", client)
+			_, _ = dnsClient.GetRecords(context.TODO(), hetznerdns.GetRecordsOpts{
+				ZoneID:  "zooooone",
+				PerPage: 10,
+				Page:    100,
+			})
+		})
+
+		It("to have an matching query parameter", func() {
+			Expect(request.URL.Query()).To(HaveKeyWithValue("zone_id", []string{"zooooone"}))
+			Expect(request.URL.Query()).To(HaveKeyWithValue("per_page", []string{"10"}))
+			Expect(request.URL.Query()).To(HaveKeyWithValue("page", []string{"100"}))
+		})
+	})
 })
-
-func NewTestClient(fn RoundTripFunc) *http.Client {
-	return &http.Client{
-		Transport: fn,
-	}
-}
-
-type RoundTripFunc func(req *http.Request) *http.Response
-
-func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req), nil
-}
