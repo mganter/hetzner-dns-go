@@ -5,15 +5,7 @@ type zoneResponse struct {
 }
 
 type zonesResponse struct {
-	Meta struct {
-		Pagination struct {
-			Page         int `json:"page"`
-			PerPage      int `json:"per_page"`
-			LastPage     int `json:"last_page"`
-			TotalEntries int `json:"total_entries"`
-		} `json:"pagination"`
-	} `json:"meta"`
-
+	Meta  Meta   `json:"meta"`
 	Zones []Zone `json:"zones"`
 }
 
