@@ -5,10 +5,12 @@ import (
 )
 
 type DNS interface {
-	CreateZone(context.Context, string, uint64) (Zone, error)
-	GetZone(context.Context, ZoneID) (Zone, error)
 	GetZones(context.Context, ListZoneOpts) (Zones, Meta, error)
+	GetZone(context.Context, ZoneID) (Zone, error)
+	CreateZone(context.Context, string, uint64) (Zone, error)
+
 	GetRecords(context.Context, GetRecordsOpts) (Records, error)
+	CreateRecord(context.Context, CreateRecordOpts) (Record, error)
 }
 
 type Meta struct {
