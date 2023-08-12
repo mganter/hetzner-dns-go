@@ -12,3 +12,7 @@ type zonesResponse struct {
 type recordsResponse struct {
 	Records Records `json:"records"`
 }
+
+type createRecordResponse struct {
+	Record Record `json:"record"`
+}
