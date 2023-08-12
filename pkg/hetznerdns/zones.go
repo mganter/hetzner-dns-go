@@ -9,7 +9,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -29,32 +30,39 @@ var (
 	ErrUnknown                              = errors.New("unknown error")
 )
 
+const (
+	zonesQueryParamPage       = "page"
+	zonesQueryParamPerPage    = "per_page"
+	zonesQueryParamName       = "name"
+	zonesQueryParamSearchName = "search_name"
+)
+
 type ListZoneOpts struct {
 	// if Page is 0, it will be considered as the APIs default value (100)
-	Page uint64
+	Page int
 	// if PerPage is 0, it will be considered as the APIs default value (100). Must not be bigger than 100.
-	PerPage uint64
+	PerPage int
 	// returns the zone with the name or returns 404
 	Name string
 	// Partial name of a zone
 	SearchName string
 }
 
-func (opts ListZoneOpts) asQueryParams() string {
-	var queryParams []string
+func (opts ListZoneOpts) asUrlValues() url.Values {
+	queryParams := url.Values{}
 	if opts.Page != 0 {
-		queryParams = append(queryParams, fmt.Sprintf("page=%v", opts.Page))
+		queryParams.Add(zonesQueryParamPage, strconv.Itoa(opts.Page))
 	}
 	if opts.PerPage != 0 {
-		queryParams = append(queryParams, fmt.Sprintf("per_page=%v", opts.PerPage))
-	}
-	if opts.Name != "" {
-		queryParams = append(queryParams, fmt.Sprintf("name=%v", opts.Name))
+		queryParams.Add(zonesQueryParamPerPage, strconv.Itoa(opts.PerPage))
 	}
 	if opts.SearchName != "" {
-		queryParams = append(queryParams, fmt.Sprintf("search_name=%v", opts.SearchName))
+		queryParams.Add(zonesQueryParamName, opts.Name)
 	}
-	return strings.Join(queryParams, "&")
+	if opts.SearchName != "" {
+		queryParams.Add(zonesQueryParamSearchName, opts.SearchName)
+	}
+	return queryParams
 }
 
 type dNSHetzner struct {
@@ -130,7 +138,7 @@ func (h *dNSHetzner) CreateZone(ctx context.Context, name string, defaultTTL uin
 }
 
 func (h *dNSHetzner) GetZones(ctx context.Context, opts ListZoneOpts) (Zones, Meta, error) {
-	url := fmt.Sprintf("%v/zones?%v", hetznerDNSBaseURL, opts.asQueryParams())
+	url := fmt.Sprintf("%v/zones?%v", hetznerDNSBaseURL, opts.asUrlValues().Encode())
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return Zones{}, Meta{}, fmt.Errorf("%w: %s", ErrCouldNotBuildRequest, err.Error())
