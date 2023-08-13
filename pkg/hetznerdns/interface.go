@@ -11,6 +11,7 @@ type DNS interface {
 
 	GetRecords(context.Context, GetRecordsOpts) (Records, error)
 	CreateRecord(context.Context, CreateRecordOpts) (Record, error)
+	DeleteRecord(context.Context, string) error
 }
 
 type Meta struct {
@@ -52,7 +53,7 @@ type Zone struct {
 
 type Record struct {
 	Type     string `json:"type"`
-	Id       string `json:"id"`
+	ID       string `json:"id"`
 	Created  string `json:"created"`
 	Modified string `json:"modified"`
 	ZoneId   string `json:"zone_id"`
