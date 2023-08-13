@@ -150,3 +150,37 @@ func (h *dNSHetzner) CreateRecord(ctx context.Context, opts CreateRecordOpts) (R
 
 	return createRecordResponse.Record, nil
 }
+
+func (h *dNSHetzner) DeleteRecord(ctx context.Context, recordID string) error {
+	requestUrl, err := url.Parse(hetznerDNSBaseURL + "records/" + recordID)
+	if err != nil {
+		panic(err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodDelete, requestUrl.String(), nil)
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrCouldNotBuildRequest, err.Error())
+	}
+
+	h.addHeaderToRequest(request)
+	response, err := h.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	switch response.StatusCode {
+	case http.StatusOK:
+		return nil
+	case http.StatusBadRequest:
+		return fmt.Errorf("%w: %s", ErrBadRequest, request.URL)
+	case http.StatusForbidden:
+		return fmt.Errorf("%w: %s", ErrForbidden, request.URL)
+	case http.StatusNotFound:
+		return fmt.Errorf("%w: %s", ErrNotFound, request.URL)
+	case http.StatusNotAcceptable:
+		return fmt.Errorf("%w: %s", ErrNotAcceptable, request.URL)
+	default:
+		body, _ := io.ReadAll(response.Body)
+		return fmt.Errorf("%w: %s %s", ErrUnknown, response.Status, body)
+	}
+}
